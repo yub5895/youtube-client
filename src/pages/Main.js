@@ -1,18 +1,10 @@
 import "../assets/style.css";
 import { FaHouse } from "react-icons/fa6";
 import { FaFolder } from "react-icons/fa";
-import { getVideos } from "../api/video";
-import { useState, useEffect } from "react";
+import { useOutletContext } from "react-router-dom";
 
 const Main = () => {
-  const [videos, setVideos] = useState([]);
-  const videoAPI = async () => {
-    const result = await getVideos();
-    setVideos(result.data);
-  };
-  useEffect(() => {
-    videoAPI();
-  }, []);
+  const { videos } = useOutletContext();
   return (
     <main>
       <aside>

@@ -3,6 +3,7 @@ import logo from "../assets/logo.svg";
 import styled from "styled-components";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
+import Modal from "./Modal";
 
 const StyledHeader = styled.header`
   position: fixed;
@@ -100,9 +101,10 @@ const StyledHeader = styled.header`
   }
 `;
 
-const Header = () => {
+const Header = ({ onUpload }) => {
   const navigate = useNavigate();
   const [token, setToken] = useState(null);
+  const [isOpen, setIsOpen] = useState(false);
 
   //처음 불러오는 시점 - 로그인 여부 체크
   useEffect(() => {
@@ -117,35 +119,45 @@ const Header = () => {
     localStorage.removeItem("token");
     setToken(null);
   };
+
+  const open = () => {
+    setIsOpen(true);
+  };
+  const close = () => {
+    setIsOpen(false);
+  };
   return (
-    <StyledHeader>
-      <div className="header-start">
-        <FaBars />{" "}
-        <a href="/">
-          <img src={logo} />
-        </a>
-      </div>
-      <div className="header-center">
-        <input type="text" placeholder="검색" />
-        <button type="button">
-          <FaMagnifyingGlass />
-        </button>
-      </div>
-      <div className="header-end">
-        {token === null ? (
-          <button type="button" onClick={login}>
-            로그인
+    <>
+      <StyledHeader>
+        <div className="header-start">
+          <FaBars />{" "}
+          <a href="/">
+            <img src={logo} />
+          </a>
+        </div>
+        <div className="header-center">
+          <input type="text" placeholder="검색" />
+          <button type="button">
+            <FaMagnifyingGlass />
           </button>
-        ) : (
-          <button type="button" onClick={logout}>
-            로그아웃
+        </div>
+        <div className="header-end">
+          {token === null ? (
+            <button type="button" onClick={login}>
+              로그인
+            </button>
+          ) : (
+            <button type="button" onClick={logout}>
+              로그아웃
+            </button>
+          )}
+          <button type="button" onClick={open}>
+            업로드
           </button>
-        )}
-        <button type="button" onClick={login}>
-          로그인
-        </button>
-      </div>
-    </StyledHeader>
+        </div>
+      </StyledHeader>
+      <Modal isOpen={isOpen} onClose={close} onUpload={onUpload} />
+    </>
   );
 };
 export default Header;
