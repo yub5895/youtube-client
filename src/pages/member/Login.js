@@ -2,28 +2,29 @@ import { useNavigate } from "react-router-dom";
 import Input from "../../components/Input";
 import { useState } from "react";
 import { login } from "../../api/member";
+import { useAuth } from "../../contexts/AuthContext";
 
 const Login = () => {
   const navigate = useNavigate();
+  const { login: authLogin } = useAuth(); // login이 다른 함수명으로 있어서 이름을 변경
   const [member, setMember] = useState({
     id: "",
     password: "",
   });
-
-  const signup = () => {
-    navigate("/signup");
-  };
   const submit = async () => {
     const result = await login(member);
     try {
       if (result.status === 200) {
-        localStorage.setItem("token", result.data);
+        authLogin(result.data);
         alert("로그인 성공!");
         navigate("/");
       }
     } catch {
       alert("로그인 실패!");
     }
+  };
+  const signup = () => {
+    navigate("/signup");
   };
   const google = () => {
     window.location.href = "http://localhost:8080/oauth2/authorization/google";
@@ -54,7 +55,7 @@ const Login = () => {
           >
             로그인
           </button>
-          or
+          <p className="text-center mt-4">or</p>
           <button
             type="button"
             className="bg-blue-500 text-white w-full py-3 mt-4 font-bold rounded hover:bg-blue-600"
@@ -75,4 +76,5 @@ const Login = () => {
     </div>
   );
 };
+
 export default Login;
