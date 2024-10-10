@@ -12,11 +12,14 @@ const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
   // 로그인 상태 - token 유무
   const [token, setToken] = useState(localStorage.getItem("token"));
+  const [id, setId] = useState(localStorage.getItem("id"));
 
   // 로그인 기능 : 토큰 저장
-  const login = (token) => {
-    localStorage.setItem("token", token);
-    setToken(token);
+  const login = (data) => {
+    localStorage.setItem("token", data.token);
+    localStorage.setItm("id", data.id);
+    setToken(data.token);
+    setId(data.id);
   };
 
   // 로그아웃 기능 : 토큰 삭제
