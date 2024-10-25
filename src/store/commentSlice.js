@@ -1,11 +1,34 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { addComment, viewComments } from "../api/comment";
+import {
+  addComment,
+  viewComments,
+  updateComment,
+  deleteComment,
+} from "../api/comment";
+
+
 
 export const createComment = createAsyncThunk(
   "comment/createComment",
-  async (data) => {
-    const response = await addComment(data);
-    return response.data;
+  async (data, thunkAPI) => {
+    await addComment(data);
+    thunkAPI.dispatch(fetchComments(data.videoCode)); //thunkAPI = dispatch이용하게 해주는 기능
+  }
+);
+
+export const modifyComment = createAsyncThunk(
+  "comment/modifyComment",
+  async (data, thunkAPI) => {
+    await updateComment(data);
+    thunkAPI.dispatch(fetchComments(data.videoCode));
+  }
+);
+
+export const removeComment = createAsyncThunk(
+  "comment/removeComment",
+  async (data, thunkAPI) => {
+    await deleteComment(data.commentCode);
+    thunkAPI.dispatch(fetchComments(data.videoCode));
   }
 );
 
@@ -17,6 +40,7 @@ export const fetchComments = createAsyncThunk(
   }
 );
 
+
 const commentSlice = createSlice({
   name: "comment",
 
@@ -25,14 +49,10 @@ const commentSlice = createSlice({
   reducers: {},
 
   extraReducers: (builder) => {
-    builder
-      .addCase(createComment.fulfilled, (state, action) => {
-        state.comments = [action.payload, ...state.comments];
-      })
-      .addCase(fetchComments.fulfilled, (state, action) => {
-        state.comments = action.payload;
-      });
+    builder.addCase(fetchComments.fulfilled, (state, action) => {
+      state.comments = action.payload;
+    });
   },
 });
 
-export default createSlice;
+export default commentSlice;

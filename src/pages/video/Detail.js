@@ -6,18 +6,23 @@ import {
   videoReducer,
   fetchVideo,
   fetchVideos,
-} from "../../reducers/videoReducer"; // reduce 스타일 import
-import { useDispatch, useSelector } from "react-redux"; // redux스타일 import1
+} from "../../reducers/videoReducer";
+import { useDispatch, useSelector } from "react-redux";
 import {
   subscribe,
   unsubscribe,
   subCount,
   fetchSub,
-} from "../../store/subscribeSlice"; // redux스타일 import2, reduce와 다르게 초기값같은건 안불러오고 액션함수명만 불러오면된다.
+} from "../../store/subscribeSlice";
 import { createComment, fetchComments } from "../../store/commentSlice";
 import { useAuth } from "../../contexts/AuthContext";
 import { useState } from "react";
+import Comment from "../../components/Comment";
 
+// 리듀서 방식 - 리덕스 툴킷 사용하는 방식으로 변경해보셔도 괜찮아요!
+// 서버에 데이터에 특화되어 비동기 작업을 훨씬 쉽게 처리할 수 있는 라이브러리
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { addComment as addCommentAPI, viewComments } from "../../api/comment";
 const Detail = () => {
   const { videoCode } = useParams();
   const { token, id } = useAuth();
@@ -29,24 +34,42 @@ const Detail = () => {
     id: id,
   });
 
-  // 이건 reduce방식 계속 유지해서 냅뒀음
-  // 리덕스툴킷방식으로 바꾸고싶으면 바꿔도되나, 실제 프로젝트에선 하나로 통일할것
+  // 리듀서 방식 - 리덕스 툴킷 사용하는 방식으로 변경해보셔도 괜찮아요!
+  // 실제 프로젝트에서는 하나로 통일해주세요! -> 만약 쓰신다면 리덕스 툴킷 사용!
   const [state, videoDispatch] = useReducer(videoReducer, videoState);
   const { video, videos } = state;
 
   // 리덕스 툴킷 방식 - 구독
-  // 매번 videoDispatch, subscribeDispatch 해줄필요없음
-  const dispatch = useDispatch(); // redux는 dispatch하나만 지정하면 계속 사용 가능하다.
+  const dispatch = useDispatch();
 
   const isSub = useSelector((state) => state.subscribe.isSub);
   const count = useSelector((state) => state.subscribe.count);
   const sub = useSelector((state) => state.subscribe.sub);
-  const comments = useSelector((state) => state.comment.comments);
+  // 리액트 쿼리(React Query) -> 필수는 아님! 굳이 사용할 필요는 없어요~
+  // queryClient : React Query의 캐시를 제어
+  const queryClient = useQueryClient();
+  // 댓글 목록
+  const {
+    data: comments,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ["comments", videoCode],
+    queryFn: () => viewComments(videoCode),
+    refetchInterval: 1000, // 1000 = 1초 -> 해당 시간마다 데이터 갱신하여 실시간처럼 처리
+  });
+
+  // 댓글 추가
+  const addMutation = useMutation({
+    mutationFn: addCommentAPI,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["comments", videoCode] });
+    },
+  });
 
   const handleSub = () => {
     if (isSub) {
-      // 구독중 -> 구독 취소
-      dispatch(unsubscribe(sub?.subCode));
+      dispatch(unsubscribe(sub.subCode));
     } else {
       // 구독 -> 구독
       dispatch(subscribe({ channelCode: video.channel.channelCode }));
@@ -55,12 +78,10 @@ const Detail = () => {
 
   // 댓글 추가
   const addComment = () => {
-    dispatch(createComment(newComment));
+    addMutation.mutate(newComment);
     setIsComment(false);
     setNewComment({ ...newComment, commentText: "" });
   };
-
-  // 비디오별 댓글 전체 보여주기
 
   useEffect(() => {
     fetchVideo(videoDispatch, videoCode);
@@ -75,7 +96,12 @@ const Detail = () => {
         dispatch(fetchSub(video.channel.channelCode));
       }
     }
-  }, [video, token, handleSub]);
+  }, [video, token]);
+
+  // 데이터 로딩 중일 때 처리
+  if (isLoading) return <>로딩중..</>;
+  // 에러 발생 했을 때 처리
+  if (error) return <>에러 발생..</>;
 
   return (
     <main className="detail">
@@ -111,19 +137,14 @@ const Detail = () => {
             </div>
           )}
           <div className="comment-list">
-            {comments.map((comment) => (
-              <div className="comment-content">
-                <h4>{comment.id}</h4>
-                <p>{comment.commentText}</p>
-                <button>답글</button>
-                <input type="text" placeholder="답글 추가.."/>
-                <div className="reply-add-status">
-                  <button>취소</button>
-                  <button>답글</button>
-                  </div>
-                </div>
+            {comments.data.map((comment) => (
+              <Comment
+                comment={comment}
+                videoCode={videoCode}
+                key={comment.commentCode}
+              />
             ))}
-          
+          </div>
         </div>
       </div>
       <div className="video-list">

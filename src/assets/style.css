@@ -45,6 +45,15 @@ main section {
   display: flex;
 }
 
+@media screen and (min-width: 880px) {
+  main aside {
+    display: block;
+  }
+  main .main-content {
+    padding-left: 55px;
+  }
+}
+
 /* section - video */
 section {
   display: flex;
